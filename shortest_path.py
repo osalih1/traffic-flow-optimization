@@ -21,10 +21,15 @@ class ShortestPath():
     start_location = ""
     end_location = ""
 
-    def __init__(self):
+    def __init__(self, input_addresses):
         """
-        TODO: Assign instance attributes and create docstring.
+        Attributes:
+            input_addresses: A list of strings representing a list of addresses.
         """
+        self.coordinate_dict = {}
+        self.radius = 1500
+        self.address_to_coords(input_addresses)
+        self.create_graph(self.coordinate_dict[input_addresses[0]], self.radius)
 
     def create_graph(self, coords, radius=1500):
         """
@@ -44,13 +49,13 @@ class ShortestPath():
         #* fig, ax = ox.plot_graph(G, node_color="r")
         return osmnx_graph
 
-    def address_to_coords(self, address="Needham, MA"):
+    def address_to_coords(self, addresses="Needham, MA"):
         """
         Converts an address to longitude and latitude.
 
         Args:
-            address: String representing a location. Can be a town, or street
-                address.
+            addresses: List of strings representing locations. Can be towns, or street
+                addresses.
 
         Returns:
             A tuple representing a coordinate (latitude, longitude)
@@ -58,8 +63,16 @@ class ShortestPath():
         # * calling the Nominatim tool and create Nominatim class
         location = Nominatim(user_agent="Geopy Library")
 
+        if isinstance(addresses, str):
+            addresses = [addresses]
+
         # * entering the location name
-        get_location = location.geocode(address)
+        for address in addresses:
+            if not self.coordinate_dict[address]:
+                pass
+            else:
+                get_location = location.geocode(address)
+                self.coordinate_dict[address] = (get_location.latitude, get_location.longitude)
 
         # * printing address
         # print(get_location.address)
@@ -83,7 +96,11 @@ class ShortestPath():
             Nearest node IDs or optionally a tuple where dist contains distances
             between the points and their nearest nodes
         """
-        coords = self.address_to_coords(location)
+        # Checks if the coordinates exist in dict, and if not, converts them.
+        if self.coordinate_dict[location]:
+            coords = self.coordinate_dict[location]
+        else:
+            coords = self.address_to_coords(location)
         # ? Should an error calculation between node and location occur?
         return ox.distance.nearest_nodes(graph, coords[0], coords[1])
 
@@ -95,16 +112,31 @@ class ShortestPath():
         Args:
 
         graph: An OSMnx graph object representing a graph of the desired area.
-        start: A string representing the geographical address of the start
-            location.
-        end: A string representing the geographical address of the end location.
+        start: A integer representing the node ID of the start location.
+        end: A integer representing the node ID of the end location.
 
         Returns:
-            The shortest path from the node closest to the starting location, to
-            the node closest to the ending location, assuming that the edges of
-            the graph are "below capacity", or don't have traffic.
+            A list of node IDs representing the shortest path from the node
+            closest to the starting location, to the node closest to the ending
+            location, assuming that the edges of the graph are "below capacity",
+            or don't have traffic.
         """
-        return ox.routing.shortest_path(graph, start, end)
+        # Checks if the coordinates exist in dict, and if not, converts them.
+        if self.coordinate_dict[start]:
+            start_coords = self.coordinate_dict[start]
+        else:
+            start_coords = self.address_to_coords(start)
+
+        if self.coordinate_dict[end]:
+            end_coords = self.coordinate_dict[end]
+        else:
+            end_coords = self.address_to_coords(end)
+
+        # Computes the start and end node IDs.
+        start_node = self.nearest_node(graph, start_coords)
+        end_node = self.nearest_node(graph, end_coords)
+
+        return ox.routing.shortest_path(graph, start_node, end_node)
 
     def astar_shortest_path(self, graph, start="1000 Olin Way, Needham, MA",
                             end="958 Highland Ave, Needham, MA"):
@@ -126,5 +158,19 @@ class ShortestPath():
             location, assuming that the edges of the graph are "below capacity",
             or don't have traffic.
         """
-        #! Must convert the input graph from OSMnx to NetworkX, and then use
-        #! the nx astar function to compute the shortest path using A*.
+        # Checks if the coordinates exist in dict, and if not, converts them.
+        if self.coordinate_dict[start]:
+            start_coords = self.coordinate_dict[start]
+        else:
+            start_coords = self.address_to_coords(start)
+
+        if self.coordinate_dict[end]:
+            end_coords = self.coordinate_dict[end]
+        else:
+            end_coords = self.address_to_coords(end)
+
+        # Computes the start and end node IDs.
+        start_node = self.nearest_node(graph, start_coords)
+        end_node = self.nearest_node(graph, end_coords)
+
+        return nx.astar_path(graph, start_node, end_node, heuristic=None)
