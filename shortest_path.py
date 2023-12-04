@@ -21,15 +21,15 @@ class ShortestPath():
     start_location = ""
     end_location = ""
 
-    def __init__(self, input_addresses):
+    def __init__(self, input_addresses, set_radius=1500):
         """
         Attributes:
             input_addresses: A list of strings representing a list of addresses.
         """
         self.coordinate_dict = {}
-        self.radius = 1500
+        self.radius = set_radius
         self.address_to_coords(input_addresses)
-        self.create_graph(self.coordinate_dict[input_addresses[0]], self.radius)
+        self.graph = self.create_graph(self.coordinate_dict[input_addresses[0]], self.radius)
 
     def create_graph(self, coords, radius=1500):
         """
@@ -49,7 +49,7 @@ class ShortestPath():
         #* fig, ax = ox.plot_graph(G, node_color="r")
         return osmnx_graph
 
-    def address_to_coords(self, addresses="Needham, MA"):
+    def address_to_coords(self, addresses):
         """
         Converts an address to longitude and latitude.
 
@@ -68,9 +68,12 @@ class ShortestPath():
 
         # * entering the location name
         for address in addresses:
-            if not self.coordinate_dict[address]:
+            # print(address)
+            if address in self.coordinate_dict:
+                print(f"{address} found in dictionary.")
                 pass
             else:
+                print(f"{address} not found in dictionary.")
                 get_location = location.geocode(address)
                 self.coordinate_dict[address] = (get_location.latitude, get_location.longitude)
 
@@ -97,15 +100,25 @@ class ShortestPath():
             between the points and their nearest nodes
         """
         # Checks if the coordinates exist in dict, and if not, converts them.
-        if self.coordinate_dict[location]:
-            coords = self.coordinate_dict[location]
-        else:
-            coords = self.address_to_coords(location)
+        coords = self.check_dictionary(location)
         # ? Should an error calculation between node and location occur?
         return ox.distance.nearest_nodes(graph, coords[0], coords[1])
 
-    def d_shortest_path(self, graph, start="1000 Olin Way, Needham, MA",
-                        end="958 Highland Ave, Needham, MA"):
+    def check_dictionary(self, location):
+        """
+        Checks if the target location is in the coordinate dictionary, and if
+        not, adds it to the dictionary.
+
+        Args:
+            location: A string representing a street address.
+        """
+        if location in self.coordinate_dict:
+            coords = self.coordinate_dict[location]
+        else:
+            coords = self.address_to_coords(location)
+        return coords
+
+    def d_shortest_path(self, graph, start, end):
         """
         Renders shortest path from location A to location B using Dijkstra's
 
@@ -121,25 +134,14 @@ class ShortestPath():
             location, assuming that the edges of the graph are "below capacity",
             or don't have traffic.
         """
-        # Checks if the coordinates exist in dict, and if not, converts them.
-        if self.coordinate_dict[start]:
-            start_coords = self.coordinate_dict[start]
-        else:
-            start_coords = self.address_to_coords(start)
-
-        if self.coordinate_dict[end]:
-            end_coords = self.coordinate_dict[end]
-        else:
-            end_coords = self.address_to_coords(end)
-
         # Computes the start and end node IDs.
-        start_node = self.nearest_node(graph, start_coords)
-        end_node = self.nearest_node(graph, end_coords)
-
+        start_node = self.nearest_node(graph, start)
+        end_node = self.nearest_node(graph, end)
+        print(start_node)
+        print(end_node)
         return ox.routing.shortest_path(graph, start_node, end_node)
 
-    def astar_shortest_path(self, graph, start="1000 Olin Way, Needham, MA",
-                            end="958 Highland Ave, Needham, MA"):
+    def astar_shortest_path(self, graph, start, end):
         """
         Discovers shortest path from location A to location B using A*.
 
@@ -159,12 +161,12 @@ class ShortestPath():
             or don't have traffic.
         """
         # Checks if the coordinates exist in dict, and if not, converts them.
-        if self.coordinate_dict[start]:
+        if start in self.coordinate_dict:
             start_coords = self.coordinate_dict[start]
         else:
             start_coords = self.address_to_coords(start)
 
-        if self.coordinate_dict[end]:
+        if end in self.coordinate_dict:
             end_coords = self.coordinate_dict[end]
         else:
             end_coords = self.address_to_coords(end)
