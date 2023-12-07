@@ -3,6 +3,7 @@ Helper functions to process a graph
 """
 
 import osmnx as ox
+import networkx as nx
 import geopandas
 import numpy as np
 
@@ -153,3 +154,21 @@ def add_capacities(edges):
         edges.at[idx, "capacity"] = this_capacity
 
     return edges
+
+
+def add_attributes_to_graph(G, edges, attributes):
+    """
+    Add edges columns specified in attributes to the graph itself
+
+    Args:
+        G: A networkx.MultiDiGraph to add attributes to
+        edges: A geopandas.GeoDataFrame including the new columns to be added to the graph
+        attributes: A list of strings representing the column names from edges to be added to the
+            graph
+
+    Returns: G, the networkx.MultiDiGraph with the columns added to edges
+    """
+    for a in attributes:
+        nx.set_edge_attributes(G, edges[a], a)
+
+    return G

@@ -142,7 +142,7 @@ class ShortestPath:
         end_node = self.nearest_node(end)
         # print(start_node)
         # print(end_node)
-        return ox.routing.shortest_path(self.graph, start_node, end_node, weight="capacity")
+        return ox.routing.shortest_path(self.graph, start_node, end_node)
 
     def astar_shortest_path(self, start, end):
         """
@@ -170,7 +170,7 @@ class ShortestPath:
             end_coords = self.address_to_coords(end)
 
         # Computes the start and end node IDs.
-        start_node = self.nearest_node(self.graph, start_coords)
-        end_node = self.nearest_node(self.graph, end_coords)
+        start_node = self.nearest_node(start_coords)
+        end_node = self.nearest_node(end_coords)
 
         return nx.astar_path(self.graph, start_node, end_node, heuristic=None)
