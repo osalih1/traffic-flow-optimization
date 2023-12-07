@@ -71,14 +71,9 @@ class ShortestPath:
 
         # * entering the location name
         for address in addresses:
-            # print(address)
-            if address in self.coordinate_dict:
-                print(f"{address} found in dictionary.")
-                pass
-            else:
-                print(f"{address} not found in dictionary.")
-                get_location = location.geocode(address)
-                self.coordinate_dict[address] = (get_location.latitude, get_location.longitude)
+            print(f"Adding '{address}' to dictionary.")
+            get_location = location.geocode(address)
+            self.coordinate_dict[address] = (get_location.latitude, get_location.longitude)
 
         # * printing address
         # print(get_location.address)
@@ -89,23 +84,23 @@ class ShortestPath:
 
         return (get_location.latitude, get_location.longitude)
 
-    def nearest_node(self, location):
-        """
-        Finds the nearest node to an address in an OSMnx graph object.
+    # def nearest_node(self, location):
+    #     """
+    #     Finds the nearest node to an address in an OSMnx graph object.
 
-        Args:
-            location: A string representing the geographical address of a
-                specified location.
+    #     Args:
+    #         location: A string representing the geographical address of a
+    #             specified location.
 
-        Returns:
-        Nearest node IDs or optionally a tuple where dist contains distances between the points and
-        their nearest nodes
-        """
-        # Checks if the coordinates exist in dict, and if not, converts them.
-        coords = self.check_dictionary(location)
+    #     Returns:
+    #     Nearest node IDs or optionally a tuple where dist contains distances between the points and
+    #     their nearest nodes
+    #     """
+    #     # Checks if the coordinates exist in dict, and if not, converts them.
+    #     coords = self.check_dictionary(location)
 
-        # ? Should an error calculation between node and location occur?
-        return ox.distance.nearest_nodes(self.graph, coords[0], coords[1])
+    #     # ? Should an error calculation between node and location occur?
+    #     return ox.distance.nearest_nodes(self.graph, coords[0], coords[1])
 
     def check_dictionary(self, location):
         """
