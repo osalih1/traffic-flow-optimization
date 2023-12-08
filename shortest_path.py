@@ -31,8 +31,11 @@ class ShortestPath:
         """
         self.coordinate_dict = {}
         self.radius = set_radius
+        print("Converting addresses...")
         self.address_to_coords(input_addresses)
+        print("Creating graph...")
         self.graph = self.create_graph(self.coordinate_dict[input_addresses[0]], self.radius)
+        print("Graph created & setup complete.")
 
     def create_graph(self, coords, radius=1500):
         """
@@ -142,11 +145,11 @@ class ShortestPath:
         are "below capacity", or don't have traffic.
         """
         # Computes the start and end node IDs.
-        start_node = self.nearest_node(start)
-        end_node = self.nearest_node(end)
+        start_node = self.nearest_node(start)[0]
+        end_node = self.nearest_node(end)[0]
         # print(start_node)
         # print(end_node)
-        return ox.routing.shortest_path(self.graph, start_node, end_node)
+        return nx.dijkstra_path(self.graph, start_node, end_node)
 
     def astar_shortest_path(self, start, end):
         """
@@ -161,20 +164,9 @@ class ShortestPath:
         location, to the node closest to the ending location, assuming that the edges of the graph
         are "below capacity", or don't have traffic.
         """
-        # Checks if the coordinates exist in dict, and if not, converts them.
-        if start in self.coordinate_dict:
-            start_coords = self.coordinate_dict[start]
-        else:
-            start_coords = self.address_to_coords(start)
-
-        if end in self.coordinate_dict:
-            end_coords = self.coordinate_dict[end]
-        else:
-            end_coords = self.address_to_coords(end)
-
         # Computes the start and end node IDs.
-        start_node = self.nearest_node(start_coords)
-        end_node = self.nearest_node(end_coords)
+        start_node = self.nearest_node(start)[0]
+        end_node = self.nearest_node(end)[0]
 
         return nx.astar_path(self.graph, start_node, end_node, heuristic=None)
 
