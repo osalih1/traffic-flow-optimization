@@ -21,5 +21,9 @@ print(alg.nearest_node(medford))
 
 shortest_path_list = alg.d_shortest_path(address_list[0], address_list[1])
 print(shortest_path_list)
+
+max_flow, flowDict = alg.max_flow_path(address_list[0], address_list[1])
+path = [(u, v, flowDict[u][v]) for u in flowDict for v in flowDict[u] if flowDict[u][v] > 0]
+print(path)
 # nc = ["y" if () else "r" for node in alg.graph.nodes()]
 # fig, ax = ox.plot_graph(alg.graph, node_color="r")

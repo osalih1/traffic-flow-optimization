@@ -8,6 +8,7 @@ import geopandas as gpd
 from geopy.geocoders import Nominatim
 from shapely.geometry import Point
 import graph_processing as gp
+from networkx.algorithms.flow import edmonds_karp
 
 
 class ShortestPath:
@@ -104,12 +105,11 @@ class ShortestPath:
         long = coords[1]
         # Converts coordinates to the 2D space
         point = Point((long, lat))
-        crs_point = gpd.GeoSeries(point, crs='epsg:4326')
+        crs_point = gpd.GeoSeries(point, crs="epsg:4326")
         # then projects the point to the same CRS as the projected graph
-        points_proj = crs_point.to_crs(self.graph.graph['crs'])
+        points_proj = crs_point.to_crs(self.graph.graph["crs"])
         # ? Should an error calculation between node and location occur?
-        return ox.distance.nearest_nodes(self.graph, points_proj.x,
-                                        points_proj.y)
+        return ox.distance.nearest_nodes(self.graph, points_proj.x, points_proj.y)
 
     def check_dictionary(self, location):
         """
@@ -153,7 +153,6 @@ class ShortestPath:
         Discovers shortest path from location A to location B using A*.
 
         Args:
-            graph: An OSMnx graph object representing a graph of the desired area.
             start: A string representing the geographical address of the start location.
             end: A string representing the geographical address of the end location.
 
@@ -178,3 +177,26 @@ class ShortestPath:
         end_node = self.nearest_node(end_coords)
 
         return nx.astar_path(self.graph, start_node, end_node, heuristic=None)
+
+    def max_flow_path(self, start, end):
+        """
+        Discover shortest path from location A to location B based on capacities assuming no
+        edge is over capacity
+
+        Args:
+            start: A string representing the geographical address of the start location.
+            end: A string representing the geographical address of the end location.
+
+        Returns:
+        flow_value representing the value of the maximum flow (total cars that can take the shortest
+        path by capacity) and flow_dict representing the path of nodes taken by the optimal path.
+        """
+        # Computes the start and end node IDs.
+        start_node = self.nearest_node(start)[0]
+        end_node = self.nearest_node(end)[0]
+
+        flow_value, flow_dict = nx.maximum_flow(
+            nx.Graph(self.graph), start_node, end_node, capacity="capacity", flow_func=edmonds_karp
+        )
+
+        return flow_value, flow_dict
