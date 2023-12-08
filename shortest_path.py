@@ -4,7 +4,9 @@ Module used to compute the shortest path from location to location.
 
 import osmnx as ox
 import networkx as nx
+import geopandas as gpd
 from geopy.geocoders import Nominatim
+from shapely.geometry import Point
 import graph_processing as gp
 
 
@@ -84,23 +86,30 @@ class ShortestPath:
 
         return (get_location.latitude, get_location.longitude)
 
-    # def nearest_node(self, location):
-    #     """
-    #     Finds the nearest node to an address in an OSMnx graph object.
+    def nearest_node(self, location):
+        """
+        Finds the nearest node to an address in an OSMnx graph object.
 
-    #     Args:
-    #         location: A string representing the geographical address of a
-    #             specified location.
+        Args:
+            location: A string representing the geographical address of a
+                specified location.
 
-    #     Returns:
-    #     Nearest node IDs or optionally a tuple where dist contains distances between the points and
-    #     their nearest nodes
-    #     """
-    #     # Checks if the coordinates exist in dict, and if not, converts them.
-    #     coords = self.check_dictionary(location)
-
-    #     # ? Should an error calculation between node and location occur?
-    #     return ox.distance.nearest_nodes(self.graph, coords[0], coords[1])
+        Returns:
+        Nearest node IDs or optionally a tuple where dist contains distances between the points and
+        their nearest nodes
+        """
+        # Checks if the coordinates exist in dict, and if not, converts them.
+        coords = self.check_dictionary(location)
+        lat = coords[0]
+        long = coords[1]
+        # Converts coordinates to the 2D space
+        point = Point((long, lat))
+        crs_point = gpd.GeoSeries(point, crs='epsg:4326')
+        # then projects the point to the same CRS as the projected graph
+        points_proj = crs_point.to_crs(self.graph.graph['crs'])
+        # ? Should an error calculation between node and location occur?
+        return ox.distance.nearest_nodes(self.graph, points_proj.x,
+                                        points_proj.y)
 
     def check_dictionary(self, location):
         """
