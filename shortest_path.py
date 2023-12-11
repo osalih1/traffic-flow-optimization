@@ -102,15 +102,18 @@ class ShortestPath:
         Nearest node IDs or optionally a tuple where dist contains distances between the points and
         their nearest nodes
         """
-        # Checks if the coordinates exist in dict, and if not, converts them.
+        # Check if the coordinates exist in dict, and if not, converts them.
         coords = self.check_dictionary(location)
         lat = coords[0]
         long = coords[1]
-        # Converts coordinates to the 2D space
+
+        # Convert coordinates to the 2D space
         point = Point((long, lat))
         crs_point = gpd.GeoSeries(point, crs="epsg:4326")
-        # then projects the point to the same CRS as the projected graph
+
+        # Project the point to the same CRS as the projected graph
         points_proj = crs_point.to_crs(self.graph.graph["crs"])
+
         # ? Should an error calculation between node and location occur?
         return ox.distance.nearest_nodes(self.graph, points_proj.x, points_proj.y)
 
@@ -122,7 +125,7 @@ class ShortestPath:
         Args:
             location: A string representing a street address.
 
-        Returns:
+        Returns: <FINISH>
         """
         if location in self.coordinate_dict:
             coords = self.coordinate_dict[location]
@@ -144,11 +147,10 @@ class ShortestPath:
         location, to the node closest to the ending location, assuming that the edges of the graph
         are "below capacity", or don't have traffic.
         """
-        # Computes the start and end node IDs.
+        # Compute the start and end node IDs.
         start_node = self.nearest_node(start)[0]
         end_node = self.nearest_node(end)[0]
-        # print(start_node)
-        # print(end_node)
+
         return nx.dijkstra_path(self.graph, start_node, end_node)
 
     def astar_shortest_path(self, start, end):
@@ -190,5 +192,14 @@ class ShortestPath:
         flow_value, flow_dict = nx.maximum_flow(
             nx.Graph(self.graph), start_node, end_node, capacity="capacity", flow_func=edmonds_karp
         )
+
+        # Add "actual_flow" attribute to graph edges
+        path = {
+            (u, v, 0): {"actual_flow": flow_dict[u][v]}
+            for u in flow_dict
+            for v in flow_dict[u]
+            if flow_dict[u][v] > 0
+        }
+        nx.set_edge_attributes(self.graph, path)
 
         return flow_value, flow_dict
