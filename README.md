@@ -12,9 +12,9 @@ We aim to analyze traffic flow in Python by utilizing OSMnx and NetworkX's imple
 - `graph_processing.py`: contains a graph processing library. Preprocesses the initial graph and adds attributes such as capacity, speed, lanes necessary to analyze it
 - `shortest_path.py`: contains an implementation of the ShortestPath class. Contains functions to find different types of shortest paths, maximum flow, and minimum cut for the graph.
 - `main.ipynb`: contains a walkthrough of the traffic analysis done for the project. Includes visualizations of various paths.
-- `requirements.txt`: contains the requirements needed to 
+- `requirements.txt`: contains the required dependencies needed to run the Python scripts and Jupyter notebooks. 
 
 ## Usage
 - Clone the repo and make sure the files specified above are present
-- Install the requirements specified in `requirements.txt`. There are specific versions of numpy and other libraries that certain requirements need, and using a virtual environment may be more convenient.
+- Navigate to the repository and install the requirements specified in `requirements.txt` by running `pip install -r requirements.txt`. This project was specified for specific library version which are contained in the requirements file, and using a virtual environment may be more convenient.
 - Walk through the Jupyter Notebook to gain a basic understanding of how the implementation of shortest path and maximum flow has been done.
