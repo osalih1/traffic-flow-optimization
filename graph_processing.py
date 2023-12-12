@@ -36,7 +36,8 @@ def add_speeds(G):
     Add speeds in kph to a processed graph
 
     This finds average speeds for each road (edge) and, if not found, uses the highway type to
-    replace the empty field with the average road speed for the entire map.
+    replace the empty field with the average road speed for the entire map. Also adds edge travel
+    time based on speed and distance
 
     Args:
         G: A networkx.MultiDiGraph that has already been processed
@@ -56,7 +57,7 @@ def add_speeds(G):
         "unclassified": 45,
     }
     G = ox.add_edge_speeds(G, hwy_speeds=hwy_speed)
-
+    G = ox.add_edge_travel_times(G)
     return G
 
 

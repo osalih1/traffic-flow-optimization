@@ -133,14 +133,15 @@ class ShortestPath:
             coords = self.address_to_coords(location)
         return coords
 
-    def d_shortest_path(self, start, end):
+    def d_shortest_path(self, start, end, weight="length"):
         """
         Renders shortest path from location A to location B using Dijkstra's
 
         Args:
-            graph: An OSMnx graph object representing a graph of the desired area.
             start: A integer representing the node ID of the start location.
             end: A integer representing the node ID of the end location.
+            weight: A string representing a column to use as weight for the shortest path. Default
+                is length (distance of path)
 
         Returns:
         A list of node IDs representing the shortest path from the node closest to the starting
@@ -151,15 +152,17 @@ class ShortestPath:
         start_node = self.nearest_node(start)[0]
         end_node = self.nearest_node(end)[0]
 
-        return nx.dijkstra_path(self.graph, start_node, end_node)
+        return nx.dijkstra_path(self.graph, start_node, end_node, weight=weight)
 
-    def astar_shortest_path(self, start, end):
+    def astar_shortest_path(self, start, end, weight="length"):
         """
         Discovers shortest path from location A to location B using A*.
 
         Args:
             start: A string representing the geographical address of the start location.
             end: A string representing the geographical address of the end location.
+            weight: A string representing a column to use as weight for the shortest path. Default
+                is length (distance of path)
 
         Returns:
         A list of node IDs representing the shortest path from the node closest to the starting
@@ -170,7 +173,7 @@ class ShortestPath:
         start_node = self.nearest_node(start)[0]
         end_node = self.nearest_node(end)[0]
 
-        return nx.astar_path(self.graph, start_node, end_node, heuristic=None)
+        return nx.astar_path(self.graph, start_node, end_node, heuristic=None, weight=weight)
 
     def max_flow_path(self, start, end):
         """
