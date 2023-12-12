@@ -24,22 +24,27 @@ class ShortestPath:
     start_location = ""
     end_location = ""
 
-    def __init__(self, input_addresses, set_radius=1500):
+    def __init__(self, input_addresses, set_radius=1500, inv_capacity=False):
         """
         Attributes:
             input_addresses: A list of strings representing a list of addresses.
             set_radius: An int representing the radius to set the graph to based off of the first
                 address, default is 1500m
+            inv_capacity: A boolean representing whether an additional column with inverse capacity
+                should be added to the graph. This is a testing purpose metric and does not
+                necessarily correspond to real life situations. Default is false
         """
         self.coordinate_dict = {}
         self.radius = set_radius
         print("Converting addresses...")
         self.address_to_coords(input_addresses)
         print("Creating graph...")
-        self.graph = self.create_graph(self.coordinate_dict[input_addresses[0]], self.radius)
+        self.graph = self.create_graph(
+            self.coordinate_dict[input_addresses[0]], self.radius, inv_capacity=inv_capacity
+        )
         print("Graph created & setup complete.")
 
-    def create_graph(self, coords, radius=1500):
+    def create_graph(self, coords, radius=1500, inv_capacity=False):
         """
         Creates a graph of the local area.
 
@@ -51,6 +56,9 @@ class ShortestPath:
             coords: Tuple representing the longitude, latitude coordinates of desired area.
             radius: An integer representing the radius of the target circle in meters, with the
                 center being `coords`. Default is 1500m.
+            inv_capacity: A boolean representing whether an additional column with inverse capacity
+                should be added to the graph. This is a testing purpose metric and does not
+                necessarily correspond to real life situations. Default is false
 
         Returns:
         An OSMnx graph object representing a graph of the desired area that has been processed
@@ -60,8 +68,10 @@ class ShortestPath:
         G = gp.add_speeds(G)
         edges = ox.graph_to_gdfs(G, nodes=False)
         edges = gp.add_lanes(edges)
-        edges = gp.add_capacities(edges)
+        edges = gp.add_capacities(edges, inv_capacity=inv_capacity)
         G = gp.add_attributes_to_graph(G, edges, ["capacity", "speed_kph", "lanes", "highway"])
+        if inv_capacity:
+            G = gp.add_attributes_to_graph(G, edges, ["inv_capacity"])
         return G
 
     def address_to_coords(self, addresses):
