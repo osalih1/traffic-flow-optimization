@@ -1,5 +1,5 @@
 """
-Module used to compute the shortest path from location to location.
+Module used to compute the shortest path and maximum flow from location A to location B.
 """
 
 import osmnx as ox
@@ -14,7 +14,7 @@ from networkx.algorithms.flow import edmonds_karp
 class ShortestPath:
     """
     Class used to compute the shortest path from location to location using
-    Dijkstra's and A*.
+    Dijkstra's and A* as well as find maximum flow and minimum cut using Edmonds-Karp
 
     Attributes:
         start_location: String representing the starting location. Can be a town, or street address
@@ -28,6 +28,8 @@ class ShortestPath:
         """
         Attributes:
             input_addresses: A list of strings representing a list of addresses.
+            set_radius: An int representing the radius to set the graph to based off of the first
+                address, default is 1500m
         """
         self.coordinate_dict = {}
         self.radius = set_radius
@@ -41,13 +43,17 @@ class ShortestPath:
         """
         Creates a graph of the local area.
 
+        Graph is created from the coordinates inputted including just drivable roads. This is then
+        processed based on the graph_processing library's process_graph function (simplified,
+        projected, intersections consolidated). Speeds, lanes, and capacities are added to the graph
+
         Args:
             coords: Tuple representing the longitude, latitude coordinates of desired area.
             radius: An integer representing the radius of the target circle in meters, with the
                 center being `coords`. Default is 1500m.
 
         Returns:
-        An OSMnx graph object representing a graph of the desired area
+        An OSMnx graph object representing a graph of the desired area that has been processed
         """
         G = ox.graph_from_point(coords, network_type="drive", dist=radius, simplify=False)
         G = gp.process_graph(G)
@@ -56,7 +62,6 @@ class ShortestPath:
         edges = gp.add_lanes(edges)
         edges = gp.add_capacities(edges)
         G = gp.add_attributes_to_graph(G, edges, ["capacity", "speed_kph", "lanes", "highway"])
-        print(G)
         return G
 
     def address_to_coords(self, addresses):
@@ -69,13 +74,13 @@ class ShortestPath:
         Returns:
         A tuple representing a coordinate (latitude, longitude)
         """
-        # * calling the Nominatim tool and create Nominatim class
+        # Call the Nominatim tool and create Nominatim class
         location = Nominatim(user_agent="Geopy Library")
 
         if isinstance(addresses, str):
             addresses = [addresses]
 
-        # * entering the location name
+        # Enter the location name to coordinate_dict
         for address in addresses:
             print(f"Adding '{address}' to dictionary.")
             get_location = location.geocode(address)
@@ -107,7 +112,6 @@ class ShortestPath:
         # Project the point to the same CRS as the projected graph
         points_proj = crs_point.to_crs(self.graph.graph["crs"])
 
-        # ? Should an error calculation between node and location occur?
         return ox.distance.nearest_nodes(self.graph, points_proj.x, points_proj.y)
 
     def check_dictionary(self, location):
@@ -129,7 +133,8 @@ class ShortestPath:
 
     def d_shortest_path(self, start, end, weight="length"):
         """
-        Renders shortest path from location A to location B using Dijkstra's
+        Renders shortest path from location A to location B using NetworkX's implementation of
+        Dijkstra's
 
         Args:
             start: A integer representing the node ID of the start location.
@@ -138,9 +143,9 @@ class ShortestPath:
                 is length (distance of path)
 
         Returns:
-        A list of node IDs representing the shortest path from the node closest to the starting
-        location, to the node closest to the ending location, assuming that the edges of the graph
-        are "below capacity", or don't have traffic.
+        A list of node IDs representing the shortest path based on dijkstra's from the node closest
+        to the starting location, to the node closest to the ending location, assuming that the
+        edges of the graph are "below capacity", or don't have traffic.
         """
         # Compute the start and end node IDs.
         start_node = self.nearest_node(start)[0]
@@ -150,7 +155,7 @@ class ShortestPath:
 
     def astar_shortest_path(self, start, end, weight="length"):
         """
-        Discovers shortest path from location A to location B using A*.
+        Discovers shortest path from location A to location B using NetworkX's implementation of A*.
 
         Args:
             start: A string representing the geographical address of the start location.
@@ -159,9 +164,9 @@ class ShortestPath:
                 is length (distance of path)
 
         Returns:
-        A list of node IDs representing the shortest path from the node closest to the starting
-        location, to the node closest to the ending location, assuming that the edges of the graph
-        are "below capacity", or don't have traffic.
+        A list of node IDs representing the shortest path based on A* from the node closest to the
+        starting location, to the node closest to the ending location, assuming that the edges of
+        the graph are "below capacity", or don't have traffic.
         """
         # Computes the start and end node IDs.
         start_node = self.nearest_node(start)[0]
@@ -172,7 +177,7 @@ class ShortestPath:
     def max_flow_path(self, start, end):
         """
         Discover shortest path from location A to location B based on capacities assuming no
-        edge is over capacity
+        edge is over capacity based on Edmond's-Karp
 
         Args:
             start: A string representing the geographical address of the start location.
@@ -182,15 +187,17 @@ class ShortestPath:
         flow_value representing the value of the maximum flow (total cars that can take the shortest
         path by capacity) and flow_dict representing the path of nodes taken by the optimal path.
         """
-        # Computes the start and end node IDs.
+        # Compute the start and end node IDs.
         start_node = self.nearest_node(start)[0]
         end_node = self.nearest_node(end)[0]
 
+        # Find max flow of graph
         flow_value, flow_dict = nx.maximum_flow(
             nx.Graph(self.graph), start_node, end_node, capacity="capacity", flow_func=edmonds_karp
         )
 
-        # Add "actual_flow" attribute to graph edges
+        # Add "actual_flow" attribute to graph edges. This is set to 0 if edge is not selected for
+        # max flow
         path = {
             (u, v, 0): {"actual_flow": flow_dict[u][v]}
             for u in flow_dict
@@ -203,7 +210,8 @@ class ShortestPath:
 
     def min_cut(self, start, end):
         """
-        Find the min cut for the graph from location A to location B based on capacities
+        Find the min cut for the graph from location A to location B based on capacities based on
+        Edmonds-Karp
 
         Args:
             start: A string representing the geographical address of the start location.
@@ -218,13 +226,14 @@ class ShortestPath:
         start_node = self.nearest_node(start)[0]
         end_node = self.nearest_node(end)[0]
 
+        # Find min cut and partition of graph into two sections
         cut_value, partition = nx.minimum_cut(
             nx.Graph(self.graph), start_node, end_node, capacity="capacity", flow_func=edmonds_karp
         )
 
+        # Find edges making up the min cut of the graph
         cutset = nx.minimum_edge_cut(
             nx.Graph(self.graph), start_node, end_node, flow_func=edmonds_karp
         )
 
-        # return cut_value, partition
         return cut_value, partition, cutset
