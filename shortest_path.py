@@ -81,13 +81,6 @@ class ShortestPath:
             get_location = location.geocode(address)
             self.coordinate_dict[address] = (get_location.latitude, get_location.longitude)
 
-        # * printing address
-        # print(get_location.address)
-
-        # * printing latitude and longitude
-        # print("Latitude = ", get_location.latitude, "\n")
-        # print("Longitude = ", get_location.longitude)
-
         return (get_location.latitude, get_location.longitude)
 
     def nearest_node(self, location):
@@ -125,7 +118,8 @@ class ShortestPath:
         Args:
             location: A string representing a street address.
 
-        Returns: <FINISH>
+        Returns: Coordinates as a tuple of (latitude, longitude) stored in the dictionary for the
+        location inputted
         """
         if location in self.coordinate_dict:
             coords = self.coordinate_dict[location]
@@ -206,3 +200,31 @@ class ShortestPath:
         nx.set_edge_attributes(self.graph, path)
 
         return flow_value, flow_dict
+
+    def min_cut(self, start, end):
+        """
+        Find the min cut for the graph from location A to location B based on capacities
+
+        Args:
+            start: A string representing the geographical address of the start location.
+            end: A string representing the geographical address of the end location.
+
+        Returns:
+        cut_value representing the min_cut of the graph (maximum cars that can go from point A to B)
+        partition (node sets present in two sections of graph), and cutset representing sets of 2
+        edges that make up the min cut
+        """
+        # Computes the start and end node IDs.
+        start_node = self.nearest_node(start)[0]
+        end_node = self.nearest_node(end)[0]
+
+        cut_value, partition = nx.minimum_cut(
+            nx.Graph(self.graph), start_node, end_node, capacity="capacity", flow_func=edmonds_karp
+        )
+
+        cutset = nx.minimum_edge_cut(
+            nx.Graph(self.graph), start_node, end_node, flow_func=edmonds_karp
+        )
+
+        # return cut_value, partition
+        return cut_value, partition, cutset
