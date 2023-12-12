@@ -2,13 +2,13 @@
 Module used to compute the shortest path and maximum flow from location A to location B.
 """
 
+from geopy.geocoders import Nominatim
+from shapely.geometry import Point
+from networkx.algorithms.flow import edmonds_karp
 import osmnx as ox
 import networkx as nx
 import geopandas as gpd
-from geopy.geocoders import Nominatim
-from shapely.geometry import Point
 import graph_processing as gp
-from networkx.algorithms.flow import edmonds_karp
 
 
 class ShortestPath:
@@ -40,7 +40,8 @@ class ShortestPath:
         self.address_to_coords(input_addresses)
         print("Creating graph...")
         self.graph = self.create_graph(
-            self.coordinate_dict[input_addresses[0]], self.radius, inv_capacity=inv_capacity
+            self.coordinate_dict[input_addresses[0]
+                                ], self.radius, inv_capacity=inv_capacity
         )
         print("Graph created & setup complete.")
 
@@ -63,13 +64,15 @@ class ShortestPath:
         Returns:
         An OSMnx graph object representing a graph of the desired area that has been processed
         """
-        G = ox.graph_from_point(coords, network_type="drive", dist=radius, simplify=False)
+        G = ox.graph_from_point(
+            coords, network_type="drive", dist=radius, simplify=False)
         G = gp.process_graph(G)
         G = gp.add_speeds(G)
         edges = ox.graph_to_gdfs(G, nodes=False)
         edges = gp.add_lanes(edges)
         edges = gp.add_capacities(edges, inv_capacity=inv_capacity)
-        G = gp.add_attributes_to_graph(G, edges, ["capacity", "speed_kph", "lanes", "highway"])
+        G = gp.add_attributes_to_graph(
+            G, edges, ["capacity", "speed_kph", "lanes", "highway"])
         if inv_capacity:
             G = gp.add_attributes_to_graph(G, edges, ["inv_capacity"])
         return G
@@ -94,7 +97,8 @@ class ShortestPath:
         for address in addresses:
             print(f"Adding '{address}' to dictionary.")
             get_location = location.geocode(address)
-            self.coordinate_dict[address] = (get_location.latitude, get_location.longitude)
+            self.coordinate_dict[address] = (
+                get_location.latitude, get_location.longitude)
 
         return (get_location.latitude, get_location.longitude)
 
@@ -163,7 +167,7 @@ class ShortestPath:
 
         return nx.dijkstra_path(self.graph, start_node, end_node, weight=weight)
 
-    def astar_shortest_path(self, start, end, weight="length"):
+    def astar_shortest_path(self, start, end, weight="length", heuristic=None):
         """
         Discovers shortest path from location A to location B using NetworkX's implementation of A*.
 
@@ -172,6 +176,8 @@ class ShortestPath:
             end: A string representing the geographical address of the end location.
             weight: A string representing a column to use as weight for the shortest path. Default
                 is length (distance of path)
+            heuristic: A function representing a potential heuristical approach
+                to optimize the shortest path search algorithm.
 
         Returns:
         A list of node IDs representing the shortest path based on A* from the node closest to the
@@ -182,7 +188,7 @@ class ShortestPath:
         start_node = self.nearest_node(start)[0]
         end_node = self.nearest_node(end)[0]
 
-        return nx.astar_path(self.graph, start_node, end_node, heuristic=None, weight=weight)
+        return nx.astar_path(self.graph, start_node, end_node, heuristic=heuristic, weight=weight)
 
     def max_flow_path(self, start, end):
         """
