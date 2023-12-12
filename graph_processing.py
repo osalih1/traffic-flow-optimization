@@ -20,7 +20,15 @@ def process_graph(G):
     G = ox.simplify_graph(G)
     G_proj = ox.project_graph(G)
     G2 = ox.consolidate_intersections(G_proj, rebuild_graph=True, dead_ends=False)
+
     return G2
+
+
+def remove_duplicate_edge(G):
+    """ """
+    for u, v, ind in G.edges:
+        if ind > 0:
+            G.remove_edge(u, v, ind)
 
 
 def add_speeds(G):

@@ -23,7 +23,13 @@ shortest_path_list = alg.d_shortest_path(address_list[0], address_list[1])
 print(shortest_path_list)
 
 max_flow, flowDict = alg.max_flow_path(address_list[0], address_list[1])
-path = [(u, v, flowDict[u][v]) for u in flowDict for v in flowDict[u] if flowDict[u][v] > 0]
-print(path)
+path = {
+    (u, v): {"actual_flow": flowDict[u][v]}
+    for u in flowDict
+    for v in flowDict[u]
+    if flowDict[u][v] > 0
+}
+nx.set_edge_attributes(alg.graph, path)
+print(alg.graph[1477][1476]["actual_flow"])
 # nc = ["y" if () else "r" for node in alg.graph.nodes()]
 # fig, ax = ox.plot_graph(alg.graph, node_color="r")
