@@ -40,8 +40,7 @@ class ShortestPath:
         self.address_to_coords(input_addresses)
         print("Creating graph...")
         self.graph = self.create_graph(
-            self.coordinate_dict[input_addresses[0]
-                                ], self.radius, inv_capacity=inv_capacity
+            self.coordinate_dict[input_addresses[0]], self.radius, inv_capacity=inv_capacity
         )
         print("Graph created & setup complete.")
 
@@ -64,15 +63,13 @@ class ShortestPath:
         Returns:
         An OSMnx graph object representing a graph of the desired area that has been processed
         """
-        G = ox.graph_from_point(
-            coords, network_type="drive", dist=radius, simplify=False)
+        G = ox.graph_from_point(coords, network_type="drive", dist=radius, simplify=False)
         G = gp.process_graph(G)
         G = gp.add_speeds(G)
         edges = ox.graph_to_gdfs(G, nodes=False)
         edges = gp.add_lanes(edges)
         edges = gp.add_capacities(edges, inv_capacity=inv_capacity)
-        G = gp.add_attributes_to_graph(
-            G, edges, ["capacity", "speed_kph", "lanes", "highway"])
+        G = gp.add_attributes_to_graph(G, edges, ["capacity", "speed_kph", "lanes", "highway"])
         if inv_capacity:
             G = gp.add_attributes_to_graph(G, edges, ["inv_capacity"])
         return G
@@ -97,8 +94,7 @@ class ShortestPath:
         for address in addresses:
             print(f"Adding '{address}' to dictionary.")
             get_location = location.geocode(address)
-            self.coordinate_dict[address] = (
-                get_location.latitude, get_location.longitude)
+            self.coordinate_dict[address] = (get_location.latitude, get_location.longitude)
 
         return (get_location.latitude, get_location.longitude)
 

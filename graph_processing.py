@@ -81,14 +81,13 @@ def add_lanes(edges):
     return edges
 
 
-def add_capacities(edges):
+def add_capacities(edges, inv_capacity=False):
     """
     Add capacities (vehicles/hour) to a processed graph that has speeds and lanes
 
     Based on https://www.fhwa.dot.gov/policyinformation/pubs/pl18003/hpms_cap.pdf, the capacity
-    calculation looks different for different types of roads. We use their estimation for highway
-    speed and https://www.globalsecurity.org/military/library/policy/army/fm/19-25/CH25.htm#img103
-    for other types of roads
+    calculation looks different for different types of roads. We use their estimations in a
+    simplified manner to match the data we had.
 
     Provided here is a capacity generalization from HPMS road classification mapped to OSMNX's road
     classification system
@@ -109,13 +108,20 @@ def add_capacities(edges):
 
         Other roads: Assume to be signalled
 
+    * Note: This estimate may not be accurate and is just a model to perform network flow analysis
+
     Args:
         edges: A geopandas.GeoDataFrame that has already been processed and has speeds and lanes
-        added
+            added
+        inv_capacity: A boolean representing whether an additional column with inverse capacity
+            should be added to the graph. Default is false
 
     Returns the same 'edges' that has hourly capacity added to the 'capacity' column
     """
     edges["capacity"] = np.nan
+
+    if inv_capacity:
+        edges["inv_capacity"] = np.nan
 
     # Iterate through rows and add capacity
     for idx, row in edges.iterrows():
@@ -159,6 +165,9 @@ def add_capacities(edges):
             this_capacity = 0.5 * lanes * 1900
         else:
             this_capacity = 3800
+
+        if inv_capacity:
+            edges.at[idx, "inv_capacity"] = 1 / this_capacity
 
         edges.at[idx, "capacity"] = this_capacity
 
